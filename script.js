@@ -6,12 +6,8 @@ fetch('videos.json')
   })
   .then(videos => {
     const wrapper = document.getElementById('swiper-wrapper');
-    wrapper.innerHTML = ''; // Limpiar contenido anterior
-
-    videos.forEach(video => {
-      const slide = document.createElement('div');
-      slide.className = 'swiper-slide';
-      slide.innerHTML = `
+    wrapper.innerHTML = videos.map(video => `
+      <div class="swiper-slide">
         <div class="video-embed-container">
           <iframe 
             src="${video.embedUrl}" 
@@ -20,10 +16,9 @@ fetch('videos.json')
             class="youtube-embed">
           </iframe>
         </div>
-        <h4 class="video-title">${video.title}</h4>
-      `;
-      wrapper.appendChild(slide);
-    });
+        <h4 class="video-title">${video.title}</h4> <!-- Fuente de datos -->
+      </div>
+    `).join('');
 
     // Inicializar Swiper
     const swiper = new Swiper('.mySwiper', {
@@ -33,26 +28,27 @@ fetch('videos.json')
       navigation: {
         nextEl: '.swiper-button-next',
         prevEl: '.swiper-button-prev',
-      },
-      on: {
-        slideChange: function () {
-          const currentSlide = this.slides[this.activeIndex];
-          const title = currentSlide.querySelector('.video-title').textContent;
-          document.querySelector('.video-title').textContent = title; // ✅ Actualiza el título externo
-        }
       }
     });
 
-    // Conectar botones externos
-    document.querySelector('.title-arrow.left').addEventListener('click', () => swiper.slidePrev());
-    document.querySelector('.title-arrow.right').addEventListener('click', () => swiper.slideNext());
+    // Función para actualizar el título EXTERNO
+    const updateMainTitle = () => {
+      const currentSlide = swiper.slides[swiper.activeIndex];
+      const title = currentSlide.querySelector('.video-title')?.textContent || 'Sin título';
+      document.querySelector('.main-video-title').textContent = title;
+    };
 
-    // Inicializar el título al cargar
-    if (videos.length > 0) {
-      document.querySelector('.video-title').textContent = videos[0].title;
-    }
+    // Actualizar al cambiar de slide
+    swiper.on('slideChange', updateMainTitle);
+
+    // Forzar actualización al cargar
+    setTimeout(updateMainTitle, 100); // Pequeño retraso para asegurar que Swiper esté listo
+
+    // Conectar botones externos
+    document.querySelector('.title-arrow.left')?.addEventListener('click', () => swiper.slidePrev());
+    document.querySelector('.title-arrow.right')?.addEventListener('click', () => swiper.slideNext());
   })
   .catch(err => {
     console.error('Error:', err);
-    document.querySelector('.video-title').textContent = 'Error al cargar videos';
+    document.querySelector('.main-video-title').textContent = 'Error al cargar';
   });
