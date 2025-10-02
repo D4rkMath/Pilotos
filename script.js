@@ -6,8 +6,12 @@ fetch('videos.json')
   })
   .then(videos => {
     const wrapper = document.getElementById('swiper-wrapper');
-    wrapper.innerHTML = videos.map(video => `
-      <div class="swiper-slide">
+    wrapper.innerHTML = ''; // Limpiar contenido anterior
+
+    videos.forEach(video => {
+      const slide = document.createElement('div');
+      slide.className = 'swiper-slide';
+      slide.innerHTML = `
         <div class="video-embed-container">
           <iframe 
             src="${video.embedUrl}" 
@@ -17,8 +21,9 @@ fetch('videos.json')
           </iframe>
         </div>
         <h4 class="video-title">${video.title}</h4>
-      </div>
-    `).join('');
+      `;
+      wrapper.appendChild(slide);
+    });
 
     // Inicializar Swiper
     const swiper = new Swiper('.mySwiper', {
@@ -28,22 +33,24 @@ fetch('videos.json')
       navigation: {
         nextEl: '.swiper-button-next',
         prevEl: '.swiper-button-prev',
+      },
+      on: {
+        slideChange: function () {
+          const currentSlide = this.slides[this.activeIndex];
+          const title = currentSlide.querySelector('.video-title').textContent;
+          document.querySelector('.video-title').textContent = title; // ✅ Actualiza el título externo
+        }
       }
     });
-
-    // Actualizar título externo
-    const updateTitle = () => {
-      const currentSlide = swiper.slides[swiper.activeIndex];
-      const title = currentSlide.querySelector('.video-title').textContent;
-      document.querySelector('.video-title').textContent = title;
-    };
-
-    swiper.on('slideChange', updateTitle);
-    updateTitle(); // Inicial
 
     // Conectar botones externos
     document.querySelector('.title-arrow.left').addEventListener('click', () => swiper.slidePrev());
     document.querySelector('.title-arrow.right').addEventListener('click', () => swiper.slideNext());
+
+    // Inicializar el título al cargar
+    if (videos.length > 0) {
+      document.querySelector('.video-title').textContent = videos[0].title;
+    }
   })
   .catch(err => {
     console.error('Error:', err);
